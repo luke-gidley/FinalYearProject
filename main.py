@@ -2,16 +2,45 @@ import numpy as np
 import cv2 as cv
 from keras.models import load_model
 from keras.preprocessing.image import img_to_array
+import serial
+import serial.tools.list_ports
+import tensorflow as tf
 
 aweight = 0.5
 num_frames = 0
 bg = None
+detect = '0'
 
-label = ['c_shape','crossing','fist','fist_thumb_out','fist_thumb_up','five','four','hook','l_shape','little_finger',
-         'one','three_little_missing','three_middle_missing','three_pointer_missing','three_ring_missing','three_thumb',
-         'thumb_little','thumb_up','two','one']
+labels = ['c_shape', 'crossing', 'fist', 'fist_thumb_out', 'fist_thumb_up', 'five', 'four', 'hook', 'l_shape',
+          'little_finger',
+          'one', 'three_little_missing', 'three_middle_missing', 'three_pointer_missing', 'three_ring_missing',
+          'three_thumb',
+          'thumb_little', 'thumb_up', 'two', 'one']
 
 model = load_model('trained_model.h5')
+
+
+
+def findArduino():
+    ports = serial.tools.list_ports.comports()
+    commPort = 'None'
+    numConnection = len(ports)
+
+    for i in range(0, numConnection):
+        port = ports[i]
+        strPort = str(port)
+
+        if 'Arduino' in strPort:
+            splitPort = strPort.split(' ')
+            commPort = (splitPort[0])
+
+    return commPort
+
+
+connectPort = findArduino()
+arduino = serial.Serial(connectPort, 9600, timeout=0.1)
+
+arduino.flush()
 
 def run_avg(img, aweight):
     global bg
@@ -32,23 +61,30 @@ def segment(img, thres=25):
         segmented = max(contours, key=cv.contourArea)
     return thresholded, segmented
 
+
 def get_prediction(img):
-    for_pred = cv.resize(img,(64,64))
+    for_pred = cv.resize(img, (64, 64))
     x = img_to_array(for_pred)
-    x = x/255.0
+    x = x / 255.0
     x = x.reshape((1,) + x.shape)
-    pred = str(label[np.argmax(x)])
-    return pred
+    confidence = model.predict(x)
+    prediction = np.argmax(confidence)
+    label = str(labels[prediction])
+    return label, confidence, prediction
+
 
 cap = cv.VideoCapture(0)
 if not cap.isOpened():
     print("Cannot open camera")
     exit()
+
+label = None
+confidence = None
 while True:
     ret, frame = cap.read()
 
-    if ret == True:
-        pred = None
+    if ret:
+
         frame = cv.flip(frame, 1)
         clone = frame.copy()
         (height, width) = frame.shape[:2]
@@ -63,19 +99,32 @@ while True:
 
             if hand is not None:
                 (thresholded, segmented) = hand
-                pred = get_prediction(thresholded)
+
+                detect = arduino.read()
+                detect = ord(detect)
+                print(detect)
+                if detect is not None:
+                    label, confidence, prediction = get_prediction(thresholded)
+                    prediction = str(prediction) + '\0'
+                    arduino.write(prediction.encode('utf-8'))
+                    detect = None
+                    print(prediction)
+
+
                 cv.drawContours(clone, [segmented + (300, 100)], -1, (0, 0, 255))
                 cv.imshow("Thesholded", thresholded)
                 contours, _ = cv.findContours(thresholded, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
         cv.rectangle(frame, (300, 100), (500, 300), (0, 255, 0), 2)
         cv.rectangle(clone, (300, 100), (500, 300), (0, 255, 0), 2)
         cv.putText(clone, "Gesture Recognition", (50, 50), cv.FONT_HERSHEY_DUPLEX, 1, (255, 0, 0), 3)
-        if pred is not None:
-            cv.putText(clone, pred, (50, 100), cv.FONT_HERSHEY_DUPLEX, 1, (0, 255, 0), 3)
+        if label is not None:
+            cv.putText(clone, label + " " + str(np.max(confidence)), (50, 100), cv.FONT_HERSHEY_DUPLEX, 1, (0, 255, 0),
+                       3)
         num_frames += 1
 
         cv.imshow('frame', clone)
     if cv.waitKey(1) == ord('q'):
+        arduino.flush()
         break
 # When everything done, release the capture
 cap.release()
