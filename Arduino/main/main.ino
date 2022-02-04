@@ -12,6 +12,12 @@
 const int lockButton = 2;
 const int lock = 5;
 
+
+String password[4] = {"5", "5", "5", "5"};
+int userPassword[4];
+bool unlock = false;
+int passwordCounter = 0;
+
 //Hardware variables
 int lockButtonState = 0;
 String incomingByte = "";
@@ -50,7 +56,7 @@ void loop() {
   
   if(lockButtonState == 1)
   {
-    digitalWrite(lock, HIGH);
+
     start = 1;
   }
 
@@ -71,47 +77,25 @@ void loop() {
       delay(1000);
       oled.clear();
       oled.write("snap!");
-      delay(1000);
       Serial.write('1');
+      delay(1000);
       if (Serial.available() > 0 )
       {
         incomingByte = Serial.readString();
         oled.clear();
         oled.print(incomingByte);
+        if(password[i] != incomingByte)
+          passwordCounter++;
         delay(2000); 
       }
-      Serial.write(0);
     }
   }
   start = 0;
-  
+
+  if(passwordCounter == 4)
+  {
+    digitalWrite(lock, HIGH);    
+  }
 }
 
 //connect to lock through mofset,
-
-void waitForUser(){ 
-  oled.clear();
-  oled.write("prepare next");
-  delay(3000);
-  oled.clear();
-  oled.write("3");
-  delay(1000);
-  oled.clear();
-  oled.write("2");
-  delay(1000);
-  oled.clear();
-  oled.write("1");
-  delay(1000);
-  oled.clear();
-  oled.write("snap!");
-  delay(1000);
-  Serial.write(1);
-  if (Serial.available() > 0 )
-  {
-    incomingByte = Serial.readString();
-    oled.clear();
-    oled.print(incomingByte);
-    delay(2000); 
-  }
-  Serial.write(0);
-}

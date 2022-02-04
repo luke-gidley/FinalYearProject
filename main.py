@@ -9,7 +9,7 @@ import tensorflow as tf
 aweight = 0.5
 num_frames = 0
 bg = None
-detect = '0'
+detect = None
 
 labels = ['c_shape', 'crossing', 'fist', 'fist_thumb_out', 'fist_thumb_up', 'five', 'four', 'hook', 'l_shape',
           'little_finger',
@@ -99,18 +99,15 @@ while True:
 
             if hand is not None:
                 (thresholded, segmented) = hand
-
                 detect = arduino.read()
-                detect = ord(detect)
-                print(detect)
+                if detect == b'':
+                    detect = None
+                label, confidence, prediction = get_prediction(thresholded)
                 if detect is not None:
-                    label, confidence, prediction = get_prediction(thresholded)
                     prediction = str(prediction) + '\0'
                     arduino.write(prediction.encode('utf-8'))
                     detect = None
                     print(prediction)
-
-
                 cv.drawContours(clone, [segmented + (300, 100)], -1, (0, 0, 255))
                 cv.imshow("Thesholded", thresholded)
                 contours, _ = cv.findContours(thresholded, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
