@@ -21,6 +21,7 @@ int passwordCounter = 0;
 //Hardware variables
 int lockButtonState = 0;
 String incomingByte = "";
+String incoming = "";
 int start = 0;
 
 SSD1306AsciiAvrI2c oled;
@@ -56,9 +57,34 @@ void loop() {
   
   if(lockButtonState == 1)
   {
-
-    start = 1;
+    digitalWrite(lock, LOW);
   }
+
+  if(Serial.available() > 0)
+  {
+    String incoming = Serial.readStringUntil('\n');
+    if(incoming == "password")
+    {
+      oled.clear();
+      oled.write("pass");
+      for(int i = 0; i < 4; i++)
+      {
+        if(Serial.available() > 0)
+        {
+          String passwordPart = Serial.readStringUntil('\n');
+          delay(500);
+          password[i] = passwordPart;
+        }
+      }
+    }
+    if(incoming == "start")
+    {
+      oled.clear();
+      oled.write("start");
+      start = 1;
+    }
+  }
+   
 
   if(start){
     for(int i = 0; i < 4; i++)
@@ -94,7 +120,7 @@ void loop() {
 
   if(passwordCounter == 4)
   {
-    digitalWrite(lock, HIGH);    
+    digitalWrite(lock, HIGH);
   }
 }
 
