@@ -13,7 +13,6 @@ bg = None
 detect = None
 password = None
 
-
 labels = ['c_shape', 'crossing', 'fist', 'fist_thumb_out', 'fist_thumb_up', 'five', 'four', 'hook', 'l_shape',
           'little_finger',
           'one', 'three_little_missing', 'three_middle_missing', 'three_pointer_missing', 'three_ring_missing',
@@ -133,7 +132,7 @@ def handRecognition():
 
 def changePassword(newPassword):
     # cleaning and splitting data
-    newPassword.strip()
+    newPassword = newPassword.strip()
     newPassword = newPassword.split(" ")
 
     # checks password is the correct length
@@ -141,9 +140,12 @@ def changePassword(newPassword):
         return False
     # checks that data is in correct format
     for i in newPassword:
-        if int(i) < 0 or int(i) > 19:
+        try:
+            if int(i) < 0 or int(i) > 19:
+                return False
+        except:
             return False
-    #puts the password into the .txt file
+    # puts the password into the .txt file
     file = open("password.txt", "w")
     file.truncate(0)
     for i in newPassword:
@@ -156,7 +158,7 @@ def uploadPassword():
     arduino.write(ps.encode('utf-8'))
     with open('password.txt', 'r') as file:
         for i in file:
-            arduino.write((i+'\n').encode('utf-8'))
+            arduino.write((i + '\n').encode('utf-8'))
 
 
 connectPort = findArduino()
@@ -180,7 +182,8 @@ for i in labels:
     index += 1
 
 # layout list to create the ui
-layout = [[sg.Text("SmartLock Application\nPlease format password like so: 1 2 3 4")], [sg.Text(key='PASSWORD')], [sg.Button("Start")], [sg.Button("Change Password")],
+layout = [[sg.Text("SmartLock Application\nPlease format password like so: 1 2 3 4")], [sg.Text(key='PASSWORD')],
+          [sg.Button("Start")], [sg.Button("Change Password")],
           [sg.InputText(key='password', size=(50, 50))],
           [sg.Column(image_col), sg.Column(image_col_desc), sg.Column(image_col_2), sg.Column(image_col_desc_2)]]
 

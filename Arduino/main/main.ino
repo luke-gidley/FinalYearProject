@@ -58,6 +58,7 @@ void loop() {
   if(lockButtonState == 1)
   {
     digitalWrite(lock, LOW);
+    passwordCounter = 0;
   }
 
   if(Serial.available() > 0)
