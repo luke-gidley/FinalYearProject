@@ -101,7 +101,7 @@ def handRecognition():
                         detect = None
                     label, confidence, prediction = get_prediction(thresholded)
                     if detect is not None:
-                        prediction = str(prediction) + '\0'
+                        prediction = str(prediction) + '\n'
                         arduino.write(prediction.encode('utf-8'))
                         detect = None
                         print(prediction)
@@ -137,7 +137,7 @@ def changePassword(newPassword):
     # checks that data is in correct format
     for i in newPassword:
         try:
-            if int(i) < 0 or int(i) > 19:
+            if int(i) <= 0 or int(i) >= 19:
                 return False
         except:
             return False
@@ -155,6 +155,7 @@ def uploadPassword():
     with open('password.txt', 'r') as file:
         for i in file:
             arduino.write((i + '\n').encode('utf-8'))
+            #time.sleep(0.5)
 
 
 connectPort = findArduino()

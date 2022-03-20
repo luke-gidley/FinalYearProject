@@ -13,10 +13,10 @@ const int lockButton = 2;
 const int lock = 5;
 
 
-String password[4] = {"5", "5", "5", "5"};
+String password[4] = {"5","5","5","5"};
 int userPassword[4];
 bool unlock = false;
-int passwordCounter = 0;
+int passwordCounter = -1;
 
 //Hardware variables
 int lockButtonState = 0;
@@ -58,7 +58,9 @@ void loop() {
   if(lockButtonState == 1)
   {
     digitalWrite(lock, LOW);
-    passwordCounter = 0;
+    passwordCounter = -1;
+    oled.clear();
+    oled.print("Locked!");
   }
 
   if(Serial.available() > 0)
@@ -72,6 +74,7 @@ void loop() {
         if(Serial.available() > 0)
         {
           String passwordPart = Serial.readStringUntil('\n');
+          char k = Serial.read();
           delay(500);
           password[i] = passwordPart;
         }
@@ -86,11 +89,12 @@ void loop() {
    
 
   if(start){
+    passwordCounter = 0;
     for(int i = 0; i < 4; i++)
     {
       oled.clear();
       oled.write("prepare next");
-      delay(3000);
+      delay(2000);
       oled.clear();
       oled.write("3");
       delay(1000);
@@ -103,13 +107,14 @@ void loop() {
       oled.clear();
       oled.write("snap!");
       Serial.write('1');
-      delay(1000);
+      delay(2000);
       if (Serial.available() > 0 )
       {
-        incomingByte = Serial.readString();
+        incomingByte = Serial.readStringUntil('\n');
+        char k = Serial.read();
         oled.clear();
-        oled.print(incomingByte);
-        if(password[i] != incomingByte)
+        oled.print("I:" + incomingByte + " P:" + password[i]);
+        if(password[i] == incomingByte)
           passwordCounter++;
         delay(1000); 
       }
@@ -122,7 +127,13 @@ void loop() {
     oled.clear();
     oled.print("Unlocked!");
     digitalWrite(lock, HIGH);
-    passwordCounter = 0;
+    passwordCounter = -1;
+  }
+  else if(passwordCounter > -1 && passwordCounter < 4)
+  {
+    oled.clear();
+    oled.print(passwordCounter);
+    passwordCounter = -1;
   }
 }
 
