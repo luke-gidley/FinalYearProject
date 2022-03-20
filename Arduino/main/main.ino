@@ -41,7 +41,7 @@ void setup() {
   oled.begin(&Adafruit128x64, I2C_ADDRESS);
   oled.setFont(CalLite24);
   oled.clear();
-  oled.print("Hello world!");
+  oled.print("Ready!");
   
   ///////////////////////////////////////////////////////////////////////
 
@@ -67,7 +67,6 @@ void loop() {
     if(incoming == "password")
     {
       oled.clear();
-      oled.write("pass");
       for(int i = 0; i < 4; i++)
       {
         if(Serial.available() > 0)
@@ -81,7 +80,6 @@ void loop() {
     if(incoming == "start")
     {
       oled.clear();
-      oled.write("start");
       start = 1;
     }
   }
@@ -113,7 +111,7 @@ void loop() {
         oled.print(incomingByte);
         if(password[i] != incomingByte)
           passwordCounter++;
-        delay(2000); 
+        delay(1000); 
       }
     }
   }
@@ -121,7 +119,10 @@ void loop() {
 
   if(passwordCounter == 4)
   {
+    oled.clear();
+    oled.print("Unlocked!");
     digitalWrite(lock, HIGH);
+    passwordCounter = 0;
   }
 }
 

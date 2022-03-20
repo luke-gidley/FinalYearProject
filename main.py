@@ -9,7 +9,7 @@ import time
 
 aweight = 0.5
 num_frames = 0
-bg = None
+background = None
 detect = None
 password = None
 
@@ -38,18 +38,10 @@ def findArduino():
     return commPort
 
 
-def run_avg(img, aweight):
-    global bg
-    if bg is None:
-        bg = img.copy().astype('float')
-        return
-    cv.accumulateWeighted(img, bg, aweight)
-
-
-def segment(img, thres=25):
-    global bg
-    diff = cv.absdiff(bg.astype('uint8'), img)
-    _, thresholded = cv.threshold(diff, thres, 255, cv.THRESH_BINARY)
+def segment(img, thres=20):
+    global background
+    diff = cv.absdiff(background.astype('uint8'), img)
+    _, thresholded = cv.threshold(diff, thres, 255, cv.THRESH_BINARY+cv.THRESH_OTSU)
     contours, _ = cv.findContours(thresholded.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
     if len(contours) == 0:
         return
@@ -72,6 +64,7 @@ def get_prediction(img):
 
 def handRecognition():
     global num_frames
+    global background
 
     arduino.flush()
     cap = cv.VideoCapture(0)
@@ -79,6 +72,8 @@ def handRecognition():
         print("Cannot open camera")
         exit()
 
+
+    firstLoopComplete = False
     label = None
     confidence = None
     while True:
@@ -93,8 +88,9 @@ def handRecognition():
             gray = cv.cvtColor(roi, cv.COLOR_BGR2GRAY)
             gray = cv.GaussianBlur(gray, (7, 7), 0)
 
-            if num_frames < 30:
-                run_avg(gray, aweight)
+            if not firstLoopComplete:
+                background = gray.copy().astype('float')
+                firstLoopComplete = True
             else:
                 hand = segment(gray)
 
@@ -189,16 +185,18 @@ layout = [[sg.Text("SmartLock Application\nPlease format password like so: 1 2 3
 
 window = sg.Window("SmartLock settings", layout)
 
+# loop to run the application.
 while True:
     event, values = window.read()
 
+    # start button event
     if event == "Start":
-
         uploadPassword()
         start = 'start\n'
         time.sleep(2.5)
         arduino.write(start.encode('utf-8'))
         handRecognition()
+    # change password button event
     elif event == "Change Password":
         accepted = changePassword(values['password'])
         if accepted:
