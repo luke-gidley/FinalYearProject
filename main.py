@@ -17,7 +17,7 @@ labels = ['c_shape', 'crossing', 'fist', 'fist_thumb_out', 'fist_thumb_up', 'fiv
           'little_finger',
           'one', 'three_little_missing', 'three_middle_missing', 'three_pointer_missing', 'three_ring_missing',
           'three_thumb',
-          'thumb_little', 'thumb_up', 'two', 'one']
+          'thumb_little', 'thumb_up', 'two', 'zero']
 
 model = load_model('trained_model.h5')
 

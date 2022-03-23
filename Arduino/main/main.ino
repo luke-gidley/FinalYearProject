@@ -112,8 +112,8 @@ void loop() {
       {
         incomingByte = Serial.readStringUntil('\n');
         char k = Serial.read();
-        oled.clear();
-        oled.print("I:" + incomingByte + " P:" + password[i]);
+        //oled.clear();
+        //oled.print("I:" + incomingByte + " P:" + password[i]);
         if(password[i] == incomingByte)
           passwordCounter++;
         delay(1000); 
@@ -132,7 +132,7 @@ void loop() {
   else if(passwordCounter > -1 && passwordCounter < 4)
   {
     oled.clear();
-    oled.print(passwordCounter);
+    oled.print("Incorrect!");
     passwordCounter = -1;
   }
 }
