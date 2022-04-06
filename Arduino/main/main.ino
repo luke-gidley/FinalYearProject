@@ -54,7 +54,8 @@ void setup() {
 void loop() {
 
   lockButtonState = !digitalRead(lockButton);
-  
+
+  //lock button
   if(lockButtonState == 1)
   {
     digitalWrite(lock, LOW);
@@ -63,6 +64,7 @@ void loop() {
     oled.print("Locked!");
   }
 
+  //reading the password from the computer and checking if it has been told to start
   if(Serial.available() > 0)
   {
     String incoming = Serial.readStringUntil('\n');
@@ -87,13 +89,13 @@ void loop() {
     }
   }
    
-
+  //when the arduino starts, it loops through this to display information on the LCD
   if(start){
     passwordCounter = 0;
     for(int i = 0; i < 4; i++)
     {
       oled.clear();
-      oled.write("prepare next");
+      oled.write("prepare \n next");
       delay(2000);
       oled.clear();
       oled.write("3");
@@ -108,6 +110,7 @@ void loop() {
       oled.write("snap!");
       Serial.write('1');
       delay(2000);
+      //password digit checking
       if (Serial.available() > 0 )
       {
         incomingByte = Serial.readStringUntil('\n');
@@ -122,6 +125,7 @@ void loop() {
   }
   start = 0;
 
+  //unlocks if password is correct.
   if(passwordCounter == 4)
   {
     oled.clear();
@@ -129,6 +133,7 @@ void loop() {
     digitalWrite(lock, HIGH);
     passwordCounter = -1;
   }
+  //displays incorrect if the password is incorrect.
   else if(passwordCounter > -1 && passwordCounter < 4)
   {
     oled.clear();

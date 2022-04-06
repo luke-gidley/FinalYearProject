@@ -13,15 +13,17 @@ background = None
 detect = None
 password = None
 
+# labels for classification
 labels = ['c_shape', 'crossing', 'fist', 'fist_thumb_out', 'fist_thumb_up', 'five', 'four', 'hook', 'l_shape',
           'little_finger',
           'one', 'three_little_missing', 'three_middle_missing', 'three_pointer_missing', 'three_ring_missing',
           'three_thumb',
           'thumb_little', 'thumb_up', 'two', 'zero']
 
+#loads in the trained model.
 model = load_model('trained_model.h5')
 
-
+#function that finds the USB port the arudino is connected to.
 def findArduino():
     ports = serial.tools.list_ports.comports()
     commPort = 'None'
@@ -37,8 +39,8 @@ def findArduino():
 
     return commPort
 
-
-def segment(img, thres=20):
+#function that cuts the hand out of the image.
+def segment(img, thres=25):
     global background
     diff = cv.absdiff(background.astype('uint8'), img)
     _, thresholded = cv.threshold(diff, thres, 255, cv.THRESH_BINARY+cv.THRESH_OTSU)
@@ -49,7 +51,7 @@ def segment(img, thres=20):
         segmented = max(contours, key=cv.contourArea)
     return thresholded, segmented
 
-
+#function that uses the trained model on an image
 def get_prediction(img):
     for_pred = cv.resize(img, (64, 64))
     x = img_to_array(for_pred)
@@ -62,6 +64,7 @@ def get_prediction(img):
     return label, confidence, prediction
 
 
+#this is the main loop, it draws everything seen on the screen.
 def handRecognition():
     global num_frames
     global background
@@ -88,23 +91,28 @@ def handRecognition():
             gray = cv.cvtColor(roi, cv.COLOR_BGR2GRAY)
             gray = cv.GaussianBlur(gray, (7, 7), 0)
 
+            #this gets the background from the first frame once the camera opens. After it has the background
+            #it starts to look for the hand to cut out.
             if not firstLoopComplete:
                 background = gray.copy().astype('float')
                 firstLoopComplete = True
             else:
                 hand = segment(gray)
 
+                #if a hand is found, this part listens for a signal from the arduino.
                 if hand is not None:
                     (thresholded, segmented) = hand
                     detect = arduino.read()
                     if detect == b'':
                         detect = None
                     label, confidence, prediction = get_prediction(thresholded)
+                    #if the arduino sends the detect signal, this section will send the currently shown gesture to it.
                     if detect is not None:
                         prediction = str(prediction) + '\n'
                         arduino.write(prediction.encode('utf-8'))
                         detect = None
-                        print(prediction)
+                        #print(prediction) testing purposes
+                    #drawing of boxes and the screen.
                     cv.drawContours(clone, [segmented + (300, 100)], -1, (0, 0, 255))
                     cv.imshow("Thesholded", thresholded)
                     contours, _ = cv.findContours(thresholded, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
